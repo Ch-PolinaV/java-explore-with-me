@@ -14,14 +14,18 @@ import java.util.Map;
 
 @Service
 public class StatsClient extends BaseClient {
+    private final String appName;
     @Autowired
-    public StatsClient(@Value("${stats-service.url}") String serverUrl, RestTemplateBuilder builder) {
+    public StatsClient(@Value("${stats-service.url}") String serverUrl,
+                       @Value("${app.name}") String appName,
+                       RestTemplateBuilder builder) {
         super(
                 builder
                         .uriTemplateHandler(new DefaultUriBuilderFactory(serverUrl))
                         .requestFactory(HttpComponentsClientHttpRequestFactory::new)
                         .build()
         );
+        this.appName = appName;
     }
 
     public ResponseEntity<Object> save(EndpointHitDto endpointHitDto) {
@@ -33,8 +37,9 @@ public class StatsClient extends BaseClient {
                 "start", start,
                 "end", end,
                 "uris", uris,
-                "unique", unique
+                "unique", unique,
+                "app", appName
         );
-        return get("/stats?start={start}&end={end}&uris={uris}&unique={unique}", parameters);
+        return get("/stats?start={start}&end={end}&uris={uris}&unique={unique}&app={app}", parameters);
     }
 }
