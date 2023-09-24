@@ -15,6 +15,7 @@ import java.util.Map;
 @Service
 public class StatsClient extends BaseClient {
     private final String appName;
+    
     @Autowired
     public StatsClient(@Value("${stats-service.url}") String serverUrl,
                        @Value("${app.name}") String appName,
