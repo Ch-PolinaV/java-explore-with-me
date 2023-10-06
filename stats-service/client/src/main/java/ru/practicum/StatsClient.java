@@ -8,6 +8,7 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +30,13 @@ public class StatsClient extends BaseClient {
         this.appName = appName;
     }
 
-    public ResponseEntity<Object> save(EndpointHitDto endpointHitDto) {
+    public ResponseEntity<Object> save(HttpServletRequest request) {
+        final EndpointHitDto endpointHitDto = EndpointHitDto.builder()
+                .app(appName)
+                .uri(request.getRequestURI())
+                .ip(request.getRemoteAddr())
+                .timestamp(LocalDateTime.now())
+                .build();
         return post("/hit", endpointHitDto);
     }
 
