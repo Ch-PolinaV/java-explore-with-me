@@ -8,8 +8,6 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 
-import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -18,7 +16,7 @@ public class StatsClient extends BaseClient {
     private final String appName;
 
     @Autowired
-    public StatsClient(@Value("${stats-service.url}") String serverUrl,
+    public StatsClient(@Value("${stats-server.url}") String serverUrl,
                        @Value("${app.name}") String appName,
                        RestTemplateBuilder builder) {
         super(
@@ -30,17 +28,11 @@ public class StatsClient extends BaseClient {
         this.appName = appName;
     }
 
-    public ResponseEntity<Object> save(HttpServletRequest request) {
-        final EndpointHitDto endpointHitDto = EndpointHitDto.builder()
-                .app(appName)
-                .uri(request.getRequestURI())
-                .ip(request.getRemoteAddr())
-                .timestamp(LocalDateTime.now())
-                .build();
+    public ResponseEntity<Object> save(EndpointHitDto endpointHitDto) {
         return post("/hit", endpointHitDto);
     }
 
-    public ResponseEntity<Object> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean unique) {
+    public ResponseEntity<Object> getStats(String start, String end, List<String> uris, Boolean unique) {
         Map<String, Object> parameters = Map.of(
                 "start", start,
                 "end", end,

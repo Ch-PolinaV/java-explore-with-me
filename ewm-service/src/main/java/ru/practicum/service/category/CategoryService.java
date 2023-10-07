@@ -17,5 +17,7 @@ public interface CategoryService {
 
     CategoryDto getCategoryDtoById(Long catId);
 
+    Boolean existsById(Long id);
+
     void deleteById(Long catId);
 }

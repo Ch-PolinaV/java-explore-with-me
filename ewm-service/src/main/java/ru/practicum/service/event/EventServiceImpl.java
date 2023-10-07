@@ -1,11 +1,13 @@
 package ru.practicum.service.event;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.EndpointHitDto;
 import ru.practicum.StatsClient;
 import ru.practicum.ViewStatsDto;
 import ru.practicum.exception.BadRequestException;
@@ -262,7 +264,7 @@ public class EventServiceImpl implements EventService {
         }
         EventFullDto eventFullDto = eventMapper.toEventFullDto(event);
         eventFullDto.setConfirmedRequests((long) requestRepository.findByEventIdConfirmed(event.getId()).size());
-        statsClient.save(request);
+        statsClient.save(toEndpointHit(request));
 
         return getViews(Collections.singletonList(eventFullDto)).get(0);
     }
@@ -277,6 +279,15 @@ public class EventServiceImpl implements EventService {
 
         if (text == null) {
             text = "";
+        }
+        if (categories != null && !categories.isEmpty()) {
+            List<Long> checkCategories = categories.stream()
+                    .filter(categoryId -> !categoryService.existsById(categoryId))
+                    .collect(Collectors.toList());
+
+            if (!checkCategories.isEmpty()) {
+                throw new BadRequestException("В запросе переданы некорректные значения категорий");
+            }
         }
 
         List<Event> events = eventRepository.findPublicEvents(text.toLowerCase(), List.of(State.PUBLISHED), categories,
@@ -294,7 +305,7 @@ public class EventServiceImpl implements EventService {
                     .collect(Collectors.toList());
         }
 
-        statsClient.save(request);
+        statsClient.save(toEndpointHit(request));
 
         List<EventShortDto> eventShortDtos = getViews(eventFullDtos).stream()
                 .map(eventMapper::toShortFromFullDto)
@@ -307,25 +318,29 @@ public class EventServiceImpl implements EventService {
         return eventShortDtos;
     }
 
+    private EndpointHitDto toEndpointHit(HttpServletRequest request) {
+        return new EndpointHitDto(null,
+                "ewm-service",
+                request.getRequestURI(),
+                request.getRemoteAddr(),
+                LocalDateTime.now());
+    }
+
     private List<EventFullDto> getViews(List<EventFullDto> eventDtos) {
         Map<String, EventFullDto> views = eventDtos.stream()
-                .collect(Collectors.toMap(fullEventDto -> "/events/" + fullEventDto.getId(),
-                        fullEventDto -> fullEventDto));
+                .collect(Collectors.toMap(eventFullDto -> "/events/" + eventFullDto.getId(),
+                        eventFullDto -> eventFullDto));
 
-        ResponseEntity<Object> responseEntity = statsClient.getStats(MIN_TIME, MAX_TIME, new ArrayList<>(views.keySet()), false);
+        Object responseBody = statsClient.getStats(MIN_TIME, MAX_TIME, new ArrayList<>(views.keySet()), false)
+                .getBody();
 
-        if (responseEntity.hasBody() && responseEntity.getBody() instanceof List<?>) {
-            List<?> body = (List<?>) responseEntity.getBody();
-
-            if (body.size() > 0 && body.get(0) instanceof ViewStatsDto) {
-                List<ViewStatsDto> viewStatsDtos = (List<ViewStatsDto>) body;
-                viewStatsDtos.forEach(viewStatsDto -> {
-                    if (views.containsKey(viewStatsDto.getUri())) {
-                        views.get(viewStatsDto.getUri()).setViews(viewStatsDto.getHits());
-                    }
-                });
+        List<ViewStatsDto> viewStatsDtos = new ObjectMapper().convertValue(responseBody, new TypeReference<>() {
+        });
+        viewStatsDtos.forEach(viewStatsDto -> {
+            if (views.containsKey(viewStatsDto.getUri())) {
+                views.get(viewStatsDto.getUri()).setViews(viewStatsDto.getHits());
             }
-        }
+        });
 
         return new ArrayList<>(views.values());
     }
