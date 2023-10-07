@@ -33,10 +33,12 @@ public class StatsClient extends BaseClient {
     }
 
     public ResponseEntity<Object> getStats(String start, String end, List<String> uris, Boolean unique) {
+        String urisAsString = String.join(",", uris);
+
         Map<String, Object> parameters = Map.of(
                 "start", start,
                 "end", end,
-                "uris", uris,
+                "uris", urisAsString,
                 "unique", unique,
                 "app", appName
         );

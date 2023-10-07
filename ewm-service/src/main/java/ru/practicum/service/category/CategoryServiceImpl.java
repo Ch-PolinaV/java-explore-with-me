@@ -89,10 +89,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryDto getCategoryDtoById(Long catId) {
         log.info("Получение категории с id = {}", catId);
 
-        Category category = categoryRepository.findById(catId)
-                .orElseThrow(() -> new NotFoundException("Категория с id = " + catId + " не найдена!"));
-
-        return mapper.toCategoryDto(category);
+        return mapper.toCategoryDto(getCategoryById(catId));
     }
 
     @Override

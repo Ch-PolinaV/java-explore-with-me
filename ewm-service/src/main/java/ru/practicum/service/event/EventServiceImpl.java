@@ -35,8 +35,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static ru.practicum.model.DateTimeConstants.MAX_TIME;
-import static ru.practicum.model.DateTimeConstants.MIN_TIME;
+import static ru.practicum.model.DateTimeConstants.END;
+import static ru.practicum.model.DateTimeConstants.START;
 
 @Service
 @Transactional(readOnly = true)
@@ -331,7 +331,7 @@ public class EventServiceImpl implements EventService {
                 .collect(Collectors.toMap(eventFullDto -> "/events/" + eventFullDto.getId(),
                         eventFullDto -> eventFullDto));
 
-        Object responseBody = statsClient.getStats(MIN_TIME, MAX_TIME, new ArrayList<>(views.keySet()), false)
+        Object responseBody = statsClient.getStats(START, END, new ArrayList<>(views.keySet()), true)
                 .getBody();
 
         List<ViewStatsDto> viewStatsDtos = new ObjectMapper().convertValue(responseBody, new TypeReference<>() {
