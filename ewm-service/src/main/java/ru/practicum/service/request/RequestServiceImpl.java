@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.exception.DataIntegrityViolationException;
+import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.RequestMapper;
 import ru.practicum.model.enums.State;
@@ -45,16 +45,16 @@ public class RequestServiceImpl implements RequestService {
         Event event = eventService.getEventById(eventId);
 
         if (event.getState() != (State.PUBLISHED)) {
-            throw new DataIntegrityViolationException("Нельзя подать запрос на участие в неопубликованном событии");
+            throw new ConflictException("Нельзя подать запрос на участие в неопубликованном событии");
         }
         if (event.getInitiator().getId().equals(userId)) {
-            throw new DataIntegrityViolationException("Инициатор события не может добавить запрос на участие в своём событии");
+            throw new ConflictException("Инициатор события не может добавить запрос на участие в своём событии");
         }
 
         int confirmedRequests = requestRepository.findByEventIdConfirmed(eventId).size();
 
         if (event.getParticipantLimit() != 0 && event.getParticipantLimit() <= confirmedRequests) {
-            throw new DataIntegrityViolationException("Достигнут лимит запросов на участие");
+            throw new ConflictException("Достигнут лимит запросов на участие");
         }
 
         Status status = Status.PENDING;
@@ -67,7 +67,7 @@ public class RequestServiceImpl implements RequestService {
         Optional<Request> check = requestRepository.findByEventIdAndRequesterId(eventId, userId);
 
         if (check.isPresent()) {
-            throw new DataIntegrityViolationException("Нельзя добавить повторный запрос");
+            throw new ConflictException("Нельзя добавить повторный запрос");
         }
 
         request = requestRepository.save(request);
@@ -85,7 +85,7 @@ public class RequestServiceImpl implements RequestService {
             throw new NotFoundException("Статус события может изменить только его владелец");
         }
         if (!event.getRequestModeration() || event.getParticipantLimit() == 0) {
-            throw new DataIntegrityViolationException("Нарушение целостности данных");
+            throw new ConflictException("Нарушение целостности данных");
         }
 
         EventRequestStatusUpdateResult updateRequest = new EventRequestStatusUpdateResult(new ArrayList<>(), new ArrayList<>());
@@ -100,13 +100,13 @@ public class RequestServiceImpl implements RequestService {
                     .collect(Collectors.toList());
             updateRequest.setRejectedRequests(requestDto);
             requestRepository.saveAll(requests);
-            throw new DataIntegrityViolationException("Превышен лимит запросов");
+            throw new ConflictException("Превышен лимит запросов");
         }
 
         if (eventRequest.getStatus().equals(Status.REJECTED)) {
             requests.forEach(request -> {
                 if (request.getStatus().equals(Status.CONFIRMED)) {
-                    throw new DataIntegrityViolationException("Невозможно отклонить подтвержденный запрос");
+                    throw new ConflictException("Невозможно отклонить подтвержденный запрос");
                 }
                 request.setStatus(Status.REJECTED);
             });

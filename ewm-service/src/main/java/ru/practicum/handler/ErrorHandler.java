@@ -1,11 +1,12 @@
 package ru.practicum.handler;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.practicum.exception.BadRequestException;
-import ru.practicum.exception.DataIntegrityViolationException;
+import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.ForbiddenException;
 import ru.practicum.exception.NotFoundException;
 
@@ -42,6 +43,17 @@ public class ErrorHandler {
                 .errors(List.of(e.getClass().getName()))
                 .status(HttpStatus.FORBIDDEN)
                 .reason("For the requested operation the conditions are not met.")
+                .message(e.getMessage())
+                .build();
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleDataIntegrityViolationException(final ConflictException e) {
+        return ApiError.builder()
+                .errors(List.of(e.getClass().getName()))
+                .status(HttpStatus.CONFLICT)
+                .reason("Integrity constraint has been violated.")
                 .message(e.getMessage())
                 .build();
     }

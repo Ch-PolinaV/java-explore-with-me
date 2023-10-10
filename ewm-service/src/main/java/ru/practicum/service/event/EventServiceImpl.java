@@ -11,7 +11,7 @@ import ru.practicum.EndpointHitDto;
 import ru.practicum.StatsClient;
 import ru.practicum.ViewStatsDto;
 import ru.practicum.exception.BadRequestException;
-import ru.practicum.exception.DataIntegrityViolationException;
+import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.ForbiddenException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.EventMapper;
@@ -84,7 +84,7 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new NotFoundException("Событие с id = " + eventId + " не найдено!"));
 
         if (event.getState().equals(State.PUBLISHED)) {
-            throw new DataIntegrityViolationException("Изменить можно только отмененные события или события в состоянии ожидания модерации");
+            throw new ConflictException("Изменить можно только отмененные события или события в состоянии ожидания модерации");
         }
         if (updateEvent.getStateAction() != null) {
             switch (updateEvent.getStateAction()) {
@@ -174,7 +174,7 @@ public class EventServiceImpl implements EventService {
             event.setRequestModeration(updateEvent.getRequestModeration());
         }
         if (event.getState() != State.PENDING) {
-            throw new DataIntegrityViolationException("Событие можно публиковать, только если оно в состоянии ожидания публикации");
+            throw new ConflictException("Событие можно публиковать, только если оно в состоянии ожидания публикации");
         }
         if (updateEvent.getStateAction() != null) {
             switch (updateEvent.getStateAction()) {

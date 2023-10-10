@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.exception.DataIntegrityViolationException;
+import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.UserMapper;
 import ru.practicum.model.user.User;
@@ -33,7 +33,7 @@ public class UserServiceImpl implements UserService {
             String name = newUserRequest.getName();
 
             if (userRepository.existsByName(name)) {
-                throw new DataIntegrityViolationException("Пользователь с именем '" + name + "' уже существует.");
+                throw new ConflictException("Пользователь с именем '" + name + "' уже существует.");
             }
         }
 

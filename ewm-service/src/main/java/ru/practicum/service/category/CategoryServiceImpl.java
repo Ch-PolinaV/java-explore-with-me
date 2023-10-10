@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.exception.DataIntegrityViolationException;
+import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.CategoryMapper;
 import ru.practicum.model.category.Category;
@@ -31,14 +31,6 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryDto create(NewCategoryDto newCategoryDto) {
         log.info("Добавление новой категории: {}", newCategoryDto);
 
-        if (newCategoryDto.getName() != null) {
-            String name = newCategoryDto.getName();
-
-            if (categoryRepository.existsByName(name)) {
-                throw new DataIntegrityViolationException("Категория с именем '" + name + "' уже существует.");
-            }
-        }
-
         return mapper.toCategoryDto(categoryRepository.save(mapper.newCategoryDtoToCategory(newCategoryDto)));
     }
 
@@ -47,21 +39,11 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryDto update(Long catId, CategoryDto categoryDto) {
         log.info("Изменение категории с id = {}", catId);
 
-        if (categoryDto.getId() == null) {
-            categoryDto.setId(catId);
-        }
-
-        Category category = categoryRepository.findById(catId)
+        categoryRepository.findById(catId)
                 .orElseThrow(() -> new NotFoundException("Категория с id = " + catId + " не найдена!"));
 
-        if (categoryDto.getName() != null) {
-            String name = categoryDto.getName();
-
-            if (!name.equals(category.getName()) && categoryRepository.existsByName(name)) {
-                throw new DataIntegrityViolationException("Категория с именем '" + name + "' уже существует.");
-            }
-
-            categoryDto.setName(name);
+        if (categoryDto.getId() == null) {
+            categoryDto.setId(catId);
         }
 
         return mapper.toCategoryDto(categoryRepository.save(mapper.categoryDtoToCategory(categoryDto)));
@@ -106,7 +88,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         boolean hasEvents = eventRepository.existsByCategoryId(catId);
         if (hasEvents) {
-            throw new DataIntegrityViolationException("Невозможно удалить категорию, так как она связана с событиями.");
+            throw new ConflictException("Невозможно удалить категорию, так как она связана с событиями.");
         }
 
         categoryRepository.deleteById(catId);
