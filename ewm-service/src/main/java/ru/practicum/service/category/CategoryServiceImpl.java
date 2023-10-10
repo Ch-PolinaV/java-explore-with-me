@@ -11,7 +11,6 @@ import ru.practicum.mapper.CategoryMapper;
 import ru.practicum.model.category.Category;
 import ru.practicum.model.category.dto.CategoryDto;
 import ru.practicum.model.category.dto.NewCategoryDto;
-import ru.practicum.model.event.Event;
 import ru.practicum.repository.CategoryRepository;
 import ru.practicum.repository.EventRepository;
 
@@ -102,11 +101,11 @@ public class CategoryServiceImpl implements CategoryService {
     public void deleteById(Long catId) {
         log.info("Удаление категории с id = {}", catId);
 
-        Category category = categoryRepository.findById(catId)
+        categoryRepository.findById(catId)
                 .orElseThrow(() -> new NotFoundException("Категория с id = " + catId + " не найдена!"));
 
-        List<Event> events = eventRepository.findByCategory(category);
-        if (!events.isEmpty()) {
+        boolean hasEvents = eventRepository.existsByCategoryId(catId);
+        if (hasEvents) {
             throw new DataIntegrityViolationException("Невозможно удалить категорию, так как она связана с событиями.");
         }
 

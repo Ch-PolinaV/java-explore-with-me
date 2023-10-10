@@ -4,25 +4,25 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import ru.practicum.model.category.Category;
 import ru.practicum.model.enums.State;
 import ru.practicum.model.event.Event;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface EventRepository extends JpaRepository<Event, Long> {
     List<Event> findAllByInitiatorId(long initiator, Pageable pageable);
 
     Optional<Event> findByIdAndInitiatorId(long eventId, long userId);
 
-    List<Event> findByCategory(Category category);
+    boolean existsByCategoryId(Long categoryId);
 
     @Query("SELECT e " +
             "FROM Event AS e " +
             "WHERE e.id IN :eventIds")
-    List<Event> findEventsByIds(List<Long> eventIds);
+    Set<Event> findEventsByIds(Set<Long> eventIds);
 
     @Query("SELECT e " +
             "FROM Event AS e " +

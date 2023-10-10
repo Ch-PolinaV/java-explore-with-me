@@ -16,6 +16,7 @@ import ru.practicum.repository.CompilationRepository;
 import ru.practicum.service.event.EventService;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,7 +33,7 @@ public class CompilationServiceImpl implements CompilationService {
     public CompilationDto create(NewCompilationDto newCompilationDto) {
         log.info("Создание новой подборки событий: {}", newCompilationDto);
 
-        List<Event> events = eventService.getAllByIds(newCompilationDto.getEvents());
+        Set<Event> events = eventService.getAllByIds(newCompilationDto.getEvents());
         Compilation compilation = compilationMapper.toCompilation(newCompilationDto, events);
 
         return compilationMapper.toCompilationDto(compilationRepository.save(compilation));
@@ -55,7 +56,7 @@ public class CompilationServiceImpl implements CompilationService {
         }
 
         if (updateCompilationRequest.getEvents() != null) {
-            List<Event> events = eventService.getAllByIds(updateCompilationRequest.getEvents());
+            Set<Event> events = eventService.getAllByIds(updateCompilationRequest.getEvents());
 
             if (events.size() != updateCompilationRequest.getEvents().size()) {
                 throw new NotFoundException("Некоторые события не найдены.");

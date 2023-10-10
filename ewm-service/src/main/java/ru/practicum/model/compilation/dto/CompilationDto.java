@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 import ru.practicum.model.event.dto.EventShortDto;
 
 import javax.validation.constraints.NotNull;
-import java.util.List;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
@@ -14,7 +14,7 @@ import java.util.List;
 public class CompilationDto {
     @NotNull
     private Long id;
-    private List<EventShortDto> events;
+    private Set<EventShortDto> events;
     @NotNull
     private Boolean pinned;
     @NotNull

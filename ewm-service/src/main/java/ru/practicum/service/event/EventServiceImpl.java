@@ -199,7 +199,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<Event> getAllByIds(List<Long> eventIds) {
+    public Set<Event> getAllByIds(Set<Long> eventIds) {
         log.info("Получение списка всех событий");
 
         return eventRepository.findEventsByIds(eventIds);
@@ -230,10 +230,13 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<EventFullDto> getEventsByAdmin(List<Long> users, List<State> states, List<Long> categories,
-                                               LocalDateTime rangeStart, LocalDateTime rangeEnd, Integer from, Integer size) {
+    public List<EventFullDto> getEventsByAdmin(AdminEventParamsDto params) {
         log.info("Получение полной информации обо всех событиях подходящих под переданные условия");
 
+        LocalDateTime rangeStart = params.getRangeStart();
+        LocalDateTime rangeEnd = params.getRangeEnd();
+        Integer from = params.getFrom();
+        Integer size = params.getSize();
         PageRequest page = PageRequest.of(from > 0 ? from / size : from, size);
 
         if (rangeEnd != null && rangeStart != null) {
@@ -242,7 +245,7 @@ public class EventServiceImpl implements EventService {
             }
         }
 
-        List<EventFullDto> eventFullDtos = eventRepository.findAdminEvents(users, states, categories, rangeStart, rangeEnd, page).stream()
+        List<EventFullDto> eventFullDtos = eventRepository.findAdminEvents(params.getUsers(), params.getStates(), params.getCategories(), rangeStart, rangeEnd, page).stream()
                 .map(eventMapper::toEventFullDto)
                 .collect(Collectors.toList());
 
@@ -270,11 +273,15 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<EventShortDto> getPublicEvents(String text, List<Long> categories, Boolean paid,
-                                               LocalDateTime rangeStart, LocalDateTime rangeEnd, Boolean onlyAvailable,
-                                               Sort sort, Integer from, Integer size, HttpServletRequest request) {
+    public List<EventShortDto> getPublicEvents(PublicEventParamsDto params, HttpServletRequest request) {
         log.info("Получение событий с возможностью фильтрации");
 
+        String text = params.getText();
+        List<Long> categories = params.getCategories();
+        LocalDateTime rangeStart = params.getRangeStart();
+        LocalDateTime rangeEnd = params.getRangeEnd();
+        Integer from = params.getFrom();
+        Integer size = params.getSize();
         PageRequest page = PageRequest.of(from > 0 ? from / size : from, size);
 
         if (text == null) {
@@ -291,7 +298,7 @@ public class EventServiceImpl implements EventService {
         }
 
         List<Event> events = eventRepository.findPublicEvents(text.toLowerCase(), List.of(State.PUBLISHED), categories,
-                paid, rangeStart, rangeEnd, page);
+                params.getPaid(), rangeStart, rangeEnd, page);
 
         List<EventFullDto> eventFullDtos = events.stream()
                 .map(eventMapper::toEventFullDto)
@@ -299,7 +306,7 @@ public class EventServiceImpl implements EventService {
         eventFullDtos.forEach(event -> event.setConfirmedRequests((long) requestRepository
                 .findByEventIdConfirmed(event.getId()).size()));
 
-        if (onlyAvailable) {
+        if (params.getOnlyAvailable()) {
             eventFullDtos = eventFullDtos.stream()
                     .filter(event -> event.getParticipantLimit() <= event.getConfirmedRequests())
                     .collect(Collectors.toList());
@@ -311,7 +318,7 @@ public class EventServiceImpl implements EventService {
                 .map(eventMapper::toShortFromFullDto)
                 .collect(Collectors.toList());
 
-        if (sort != null && sort.equals(Sort.VIEWS)) {
+        if (params.getSort() != null && params.getSort().equals(Sort.VIEWS)) {
             eventShortDtos.sort((e1, e2) -> e2.getViews().compareTo(e1.getViews()));
         }
         getConfirmedRequests(eventFullDtos);

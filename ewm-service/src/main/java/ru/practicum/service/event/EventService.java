@@ -1,13 +1,11 @@
 package ru.practicum.service.event;
 
-import ru.practicum.model.enums.Sort;
-import ru.practicum.model.enums.State;
 import ru.practicum.model.event.Event;
 import ru.practicum.model.event.dto.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 public interface EventService {
     EventFullDto create(Long userId, NewEventDto newEventDto);
@@ -18,18 +16,15 @@ public interface EventService {
 
     Event getEventById(Long eventId);
 
-    List<Event> getAllByIds(List<Long> eventIds);
+    Set<Event> getAllByIds(Set<Long> eventIds);
 
     List<EventShortDto> getAllByInitiatorId(Long userId, Integer from, Integer size);
 
    EventFullDto getEventInfoByInitiatorId(Long userId, Long eventId);
 
-    List<EventFullDto> getEventsByAdmin(List<Long> users, List<State> states, List<Long> categories,
-                                      LocalDateTime rangeStart, LocalDateTime rangeEnd, Integer from, Integer size);
+    List<EventFullDto> getEventsByAdmin(AdminEventParamsDto eventParamsDto);
 
     EventFullDto getPublicEvent(Long eventId, HttpServletRequest request);
 
-    List<EventShortDto> getPublicEvents(String text, List<Long> categories, Boolean paid,
-                                        LocalDateTime rangeStart, LocalDateTime rangeEnd, Boolean onlyAvailable,
-                                        Sort sort, Integer from, Integer size, HttpServletRequest request);
+    List<EventShortDto> getPublicEvents(PublicEventParamsDto eventParamsDto, HttpServletRequest request);
 }
