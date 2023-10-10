@@ -31,10 +31,10 @@ public class PrivateEventController {
     @PatchMapping("/{eventId}")
     public ResponseEntity<EventFullDto> update(@PathVariable Long userId,
                                                @PathVariable Long eventId,
-                                               @Valid @RequestBody UpdateEventUserRequest updateEventUserRequest) {
+                                               @Valid @RequestBody UpdateEventRequest updateEventRequest) {
         log.debug("Получен Patch-запрос к эндпоинту: /users/{}/events/{} на изменение события добавленного текущим пользователем", eventId, eventId);
 
-        return new ResponseEntity<>(eventService.update(userId, eventId, updateEventUserRequest), HttpStatus.OK);
+        return new ResponseEntity<>(eventService.update(userId, eventId, updateEventRequest), HttpStatus.OK);
     }
 
     @PatchMapping("/{eventId}/requests")

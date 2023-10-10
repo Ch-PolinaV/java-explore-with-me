@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.model.event.dto.AdminEventParamsDto;
 import ru.practicum.model.event.dto.EventFullDto;
-import ru.practicum.model.event.dto.UpdateEventAdminRequest;
+import ru.practicum.model.event.dto.UpdateEventRequest;
 import ru.practicum.service.event.EventService;
 
 import javax.validation.Valid;
@@ -29,7 +29,7 @@ public class AdminEventController {
 
     @PatchMapping("/{eventId}")
     public ResponseEntity<EventFullDto> updateEvent(@PathVariable Long eventId,
-                                                    @Valid @RequestBody UpdateEventAdminRequest updateEventAdminRequest) {
+                                                    @Valid @RequestBody UpdateEventRequest updateEventAdminRequest) {
         log.debug("Получен Patch-запрос к эндпоинту: /admin/events/{} на изменение события с id = {}", eventId, eventId);
 
         return new ResponseEntity<>(eventService.updateByAdmin(eventId, updateEventAdminRequest), HttpStatus.OK);

@@ -15,9 +15,9 @@ import ru.practicum.model.event.dto.EventRequestStatusUpdateResult;
 import ru.practicum.model.request.Request;
 import ru.practicum.model.request.dto.ParticipationRequestDto;
 import ru.practicum.model.user.User;
+import ru.practicum.repository.EventRepository;
 import ru.practicum.repository.RequestRepository;
-import ru.practicum.service.event.EventService;
-import ru.practicum.service.user.UserService;
+import ru.practicum.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -32,8 +32,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class RequestServiceImpl implements RequestService {
     private final RequestRepository requestRepository;
-    private final UserService userService;
-    private final EventService eventService;
+    private final UserRepository userRepository;
+    private final EventRepository eventRepository;
     private final RequestMapper requestMapper;
 
     @Override
@@ -41,8 +41,16 @@ public class RequestServiceImpl implements RequestService {
     public ParticipationRequestDto create(Long userId, Long eventId) {
         log.info("Добавление запроса на участие в событии с id = {} пользователем с id = {}", eventId, userId);
 
-        User user = userService.getById(userId);
-        Event event = eventService.getEventById(eventId);
+        Optional<Request> check = requestRepository.findByEventIdAndRequesterId(eventId, userId);
+
+        if (check.isPresent()) {
+            throw new ConflictException("Нельзя добавить повторный запрос");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден!"));
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Событие с id = " + eventId + " не найдено!"));
 
         if (event.getState() != (State.PUBLISHED)) {
             throw new ConflictException("Нельзя подать запрос на участие в неопубликованном событии");
@@ -51,7 +59,7 @@ public class RequestServiceImpl implements RequestService {
             throw new ConflictException("Инициатор события не может добавить запрос на участие в своём событии");
         }
 
-        int confirmedRequests = requestRepository.findByEventIdConfirmed(eventId).size();
+        int confirmedRequests = requestRepository.findByEventIdAndStatus(eventId, Status.CONFIRMED).size();
 
         if (event.getParticipantLimit() != 0 && event.getParticipantLimit() <= confirmedRequests) {
             throw new ConflictException("Достигнут лимит запросов на участие");
@@ -64,11 +72,6 @@ public class RequestServiceImpl implements RequestService {
         }
 
         Request request = new Request(null, LocalDateTime.now(), event, user, status);
-        Optional<Request> check = requestRepository.findByEventIdAndRequesterId(eventId, userId);
-
-        if (check.isPresent()) {
-            throw new ConflictException("Нельзя добавить повторный запрос");
-        }
 
         request = requestRepository.save(request);
         return requestMapper.toParticipationRequestDto(request);
@@ -79,18 +82,16 @@ public class RequestServiceImpl implements RequestService {
     public EventRequestStatusUpdateResult updateStatusRequest(Long userId,
                                                               Long eventId,
                                                               EventRequestStatusUpdateRequest eventRequest) {
-        Event event = eventService.getEventById(eventId);
+        Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
+                .orElseThrow(() -> new NotFoundException("Событие с id = " + eventId + " не найдено!"));
 
-        if (!event.getInitiator().getId().equals(userId)) {
-            throw new NotFoundException("Статус события может изменить только его владелец");
-        }
         if (!event.getRequestModeration() || event.getParticipantLimit() == 0) {
             throw new ConflictException("Нарушение целостности данных");
         }
 
         EventRequestStatusUpdateResult updateRequest = new EventRequestStatusUpdateResult(new ArrayList<>(), new ArrayList<>());
-        int confirmedRequests = requestRepository.findByEventIdConfirmed(eventId).size();
-        List<Request> requests = requestRepository.findByEventIdAndRequestsIds(eventId, eventRequest.getRequestIds());
+        int confirmedRequests = requestRepository.findByEventIdAndStatus(eventId, Status.CONFIRMED).size();
+        List<Request> requests = requestRepository.findByEventIdAndIdIn(eventId, eventRequest.getRequestIds());
 
         if (Objects.equals(eventRequest.getStatus(), Status.CONFIRMED)
                 && confirmedRequests + requests.size() > event.getParticipantLimit()) {
@@ -131,7 +132,9 @@ public class RequestServiceImpl implements RequestService {
     public List<ParticipationRequestDto> getByRequester(Long userId) {
         log.info("Получение информации о заявках текущего пользователя на участие в чужих событиях");
 
-        userService.getById(userId);
+        userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден!"));
+
         return requestRepository.findAllByRequesterId(userId).stream()
                 .map(requestMapper::toParticipationRequestDto)
                 .collect(Collectors.toList());
@@ -151,7 +154,9 @@ public class RequestServiceImpl implements RequestService {
     public ParticipationRequestDto cancel(Long userId, Long requestId) {
         log.info("Отмена своего запроса на участие в событии");
 
-        userService.getById(userId);
+        userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден!"));
+
         Request request = requestRepository.findById(requestId).orElseThrow(
                 () -> new NotFoundException("Запрос с id = " + requestId + " не найден!"));
         request.setStatus(Status.CANCELED);

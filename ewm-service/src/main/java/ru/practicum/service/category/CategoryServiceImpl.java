@@ -74,11 +74,6 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public Boolean existsById(Long id) {
-        return categoryRepository.existsById(id);
-    }
-
-    @Override
     @Transactional
     public void deleteById(Long catId) {
         log.info("Удаление категории с id = {}", catId);

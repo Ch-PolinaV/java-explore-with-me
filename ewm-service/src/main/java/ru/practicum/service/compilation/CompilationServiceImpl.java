@@ -13,7 +13,7 @@ import ru.practicum.model.compilation.dto.NewCompilationDto;
 import ru.practicum.model.compilation.dto.UpdateCompilationRequest;
 import ru.practicum.model.event.Event;
 import ru.practicum.repository.CompilationRepository;
-import ru.practicum.service.event.EventService;
+import ru.practicum.repository.EventRepository;
 
 import java.util.List;
 import java.util.Set;
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CompilationServiceImpl implements CompilationService {
     private final CompilationRepository compilationRepository;
-    private final EventService eventService;
+    private final EventRepository eventRepository;
     private final CompilationMapper compilationMapper;
 
     @Override
@@ -33,7 +33,7 @@ public class CompilationServiceImpl implements CompilationService {
     public CompilationDto create(NewCompilationDto newCompilationDto) {
         log.info("Создание новой подборки событий: {}", newCompilationDto);
 
-        Set<Event> events = eventService.getAllByIds(newCompilationDto.getEvents());
+        Set<Event> events = eventRepository.findEventsByIds(newCompilationDto.getEvents());
         Compilation compilation = compilationMapper.toCompilation(newCompilationDto, events);
 
         return compilationMapper.toCompilationDto(compilationRepository.save(compilation));
@@ -56,7 +56,7 @@ public class CompilationServiceImpl implements CompilationService {
         }
 
         if (updateCompilationRequest.getEvents() != null) {
-            Set<Event> events = eventService.getAllByIds(updateCompilationRequest.getEvents());
+            Set<Event> events = eventRepository.findEventsByIds(updateCompilationRequest.getEvents());
 
             if (events.size() != updateCompilationRequest.getEvents().size()) {
                 throw new NotFoundException("Некоторые события не найдены.");

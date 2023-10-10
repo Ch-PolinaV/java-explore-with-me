@@ -1,22 +1,16 @@
 package ru.practicum.service.event;
 
-import ru.practicum.model.event.Event;
 import ru.practicum.model.event.dto.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.Set;
 
 public interface EventService {
     EventFullDto create(Long userId, NewEventDto newEventDto);
 
-    EventFullDto update(Long userId, Long eventId, UpdateEventUserRequest updateEvent);
+    EventFullDto update(Long userId, Long eventId, UpdateEventRequest updateEvent);
 
-    EventFullDto updateByAdmin(Long eventId, UpdateEventAdminRequest updateEvent);
-
-    Event getEventById(Long eventId);
-
-    Set<Event> getAllByIds(Set<Long> eventIds);
+    EventFullDto updateByAdmin(Long eventId, UpdateEventRequest updateEvent);
 
     List<EventShortDto> getAllByInitiatorId(Long userId, Integer from, Integer size);
 
