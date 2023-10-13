@@ -21,5 +21,5 @@ public interface CommentMapper {
 
     @Mapping(target = "eventId", source = "event.id")
     @Mapping(target = "authorId", source = "author.id")
-    CommentDto ToCommentDto(Comment comment);
+    CommentDto toCommentDto(Comment comment);
 }

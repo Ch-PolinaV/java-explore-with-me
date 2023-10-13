@@ -40,7 +40,7 @@ public class CommentServiceImpl implements CommentService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие с id = " + eventId + " не найдено!"));
 
-        return mapper.ToCommentDto(commentRepository.save(mapper.toComment(user, event, commentCreateDto)));
+        return mapper.toCommentDto(commentRepository.save(mapper.toComment(user, event, commentCreateDto)));
     }
 
     @Override
@@ -57,7 +57,7 @@ public class CommentServiceImpl implements CommentService {
             throw new ForbiddenException("Изменять комментарий может только пользователь который его оставил");
         }
 
-        return mapper.ToCommentDto(commentRepository.save(mapper.toComment(user, comment.getEvent(), commentUpdateDto)));
+        return mapper.toCommentDto(commentRepository.save(mapper.toComment(user, comment.getEvent(), commentUpdateDto)));
     }
 
     @Override
@@ -67,7 +67,7 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = commentRepository.findById(commentId).orElseThrow(
                 () -> new NotFoundException("Комментарий с id = " + commentId + " не найден!"));
 
-        return mapper.ToCommentDto(comment);
+        return mapper.toCommentDto(comment);
     }
 
     @Override
@@ -78,7 +78,7 @@ public class CommentServiceImpl implements CommentService {
         userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден!"));
 
         return commentRepository.findCommentsByAuthorId(userId, page).stream()
-                .map(mapper::ToCommentDto)
+                .map(mapper::toCommentDto)
                 .collect(Collectors.toList());
     }
 
@@ -90,7 +90,7 @@ public class CommentServiceImpl implements CommentService {
         eventRepository.findById(eventId).orElseThrow(() -> new NotFoundException("Событие с id = " + eventId + " не найдено!"));
 
         return commentRepository.findCommentsByEventId(eventId, page).stream()
-                .map(mapper::ToCommentDto)
+                .map(mapper::toCommentDto)
                 .collect(Collectors.toList());
     }
 
