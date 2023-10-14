@@ -9,14 +9,16 @@ import ru.practicum.exception.ForbiddenException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.CommentMapper;
 import ru.practicum.model.comment.Comment;
-import ru.practicum.model.comment.dto.CommentCreateUpdateDto;
+import ru.practicum.model.comment.dto.CommentCreateDto;
 import ru.practicum.model.comment.dto.CommentDto;
+import ru.practicum.model.comment.dto.CommentUpdateDto;
 import ru.practicum.model.event.Event;
 import ru.practicum.model.user.User;
 import ru.practicum.repository.CommentRepository;
 import ru.practicum.repository.EventRepository;
 import ru.practicum.repository.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,32 +34,44 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public CommentDto create(Long userId, Long eventId, CommentCreateUpdateDto commentCreateDto) {
-        log.info("Добавление комментария к событию с id = {} пользователем с id = {}", eventId, userId);
+    public CommentDto create(Long userId, CommentCreateDto commentCreateDto) {
+        log.info("Добавление комментария к событию с id = {} пользователем с id = {}", commentCreateDto.getEventId(), userId);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден!"));
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("Событие с id = " + eventId + " не найдено!"));
+        Event event = eventRepository.findById(commentCreateDto.getEventId())
+                .orElseThrow(() -> new NotFoundException("Событие не найдено!"));
 
-        return mapper.toCommentDto(commentRepository.save(mapper.toComment(user, event, commentCreateDto)));
+        Comment comment = mapper.createToComment(user, event, commentCreateDto);
+        return mapper.toCommentDto(commentRepository.save(comment));
     }
 
     @Override
     @Transactional
-    public CommentDto update(Long userId, Long commentId, CommentCreateUpdateDto commentUpdateDto) {
+    public CommentDto update(Long userId, CommentUpdateDto commentUpdateDto) {
         log.info("Изменение комментария пользователем с id = {}", userId);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден!"));
+        Comment comment = commentRepository.findByIdAndAuthorId(commentUpdateDto.getCommentId(), userId).orElseThrow(
+                () -> new NotFoundException("Комментарий не найден!"));
+
+        comment = mapper.updateToComment(user, comment.getEvent(), comment.getCreatedOn(), commentUpdateDto);
+        return mapper.toCommentDto(commentRepository.save(comment));
+    }
+
+    @Override
+    @Transactional
+    public CommentDto updateByAdmin(Long commentId, CommentUpdateDto commentUpdateDto) {
+        log.info("Изменение комментария администратором");
+
         Comment comment = commentRepository.findById(commentId).orElseThrow(
-                () -> new NotFoundException("Комментарий с id = " + commentId + " не найден!"));
+                () -> new NotFoundException("Комментарий не найден!"));
 
-        if (!comment.getAuthor().getId().equals(userId)) {
-            throw new ForbiddenException("Изменять комментарий может только пользователь который его оставил");
-        }
+        comment.setText(commentUpdateDto.getText());
+        comment.setUpdatedOn(LocalDateTime.now());
 
-        return mapper.toCommentDto(commentRepository.save(mapper.toComment(user, comment.getEvent(), commentUpdateDto)));
+        return mapper.toCommentDto(commentRepository.save(comment));
     }
 
     @Override
@@ -100,7 +114,7 @@ public class CommentServiceImpl implements CommentService {
         log.info("Удаление комментария с id = {} пользователя с id = {}", commentId, userId);
 
         userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден!"));
-        Comment comment = commentRepository.findById(commentId).orElseThrow(
+        Comment comment = commentRepository.findByIdAndAuthorId(commentId, userId).orElseThrow(
                 () -> new NotFoundException("Комментарий с id = " + commentId + " не найден!"));
 
         if (!comment.getAuthor().getId().equals(userId)) {

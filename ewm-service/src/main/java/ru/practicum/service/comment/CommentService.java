@@ -1,14 +1,17 @@
 package ru.practicum.service.comment;
 
-import ru.practicum.model.comment.dto.CommentCreateUpdateDto;
+import ru.practicum.model.comment.dto.CommentCreateDto;
 import ru.practicum.model.comment.dto.CommentDto;
+import ru.practicum.model.comment.dto.CommentUpdateDto;
 
 import java.util.List;
 
 public interface CommentService {
-    CommentDto create(Long userId, Long eventId, CommentCreateUpdateDto commentCreateUpdateDto);
+    CommentDto create(Long userId, CommentCreateDto commentCreateDto);
 
-    CommentDto update(Long userId, Long commentId, CommentCreateUpdateDto commentCreateUpdateDto);
+    CommentDto update(Long userId, CommentUpdateDto commentUpdateDto);
+
+    CommentDto updateByAdmin(Long commentId, CommentUpdateDto commentUpdateDto);
 
     CommentDto getById(Long commentId);
 

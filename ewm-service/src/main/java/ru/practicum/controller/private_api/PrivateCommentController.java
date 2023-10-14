@@ -5,8 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.model.comment.dto.CommentCreateUpdateDto;
+import ru.practicum.model.comment.dto.CommentCreateDto;
 import ru.practicum.model.comment.dto.CommentDto;
+import ru.practicum.model.comment.dto.CommentUpdateDto;
 import ru.practicum.service.comment.CommentService;
 
 import javax.validation.Valid;
@@ -21,20 +22,18 @@ public class PrivateCommentController {
 
     @PostMapping
     public ResponseEntity<CommentDto> create(@PathVariable Long userId,
-                                             @RequestParam Long eventId,
-                                             @Valid @RequestBody CommentCreateUpdateDto createDto) {
+                                             @Valid @RequestBody CommentCreateDto createDto) {
         log.debug("Получен POST-запрос к эндпоинту: /users/{}/comments на сохранение нового комментария", userId);
 
-        return new ResponseEntity<>(commentService.create(userId, eventId, createDto), HttpStatus.CREATED);
+        return new ResponseEntity<>(commentService.create(userId, createDto), HttpStatus.CREATED);
     }
 
-    @PatchMapping("/{commentId}")
+    @PatchMapping
     public ResponseEntity<CommentDto> update(@PathVariable Long userId,
-                                             @PathVariable Long commentId,
-                                             @Valid @RequestBody CommentCreateUpdateDto updateDto) {
-        log.debug("Получен Patch-запрос к эндпоинту: /users/{}/commentId/{} на изменение комментария добавленного текущим пользователем", userId, commentId);
+                                             @Valid @RequestBody CommentUpdateDto updateDto) {
+        log.debug("Получен Patch-запрос к эндпоинту: /users/{}/comments на изменение комментария добавленного текущим пользователем", userId);
 
-        return new ResponseEntity<>(commentService.update(userId, commentId, updateDto), HttpStatus.OK);
+        return new ResponseEntity<>(commentService.update(userId, updateDto), HttpStatus.OK);
     }
 
     @GetMapping
