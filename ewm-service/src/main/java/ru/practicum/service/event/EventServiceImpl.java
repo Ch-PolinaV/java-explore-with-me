@@ -45,6 +45,7 @@ public class EventServiceImpl implements EventService {
     private final LocationRepository locationRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final CommentRepository commentRepository;
     private final EventMapper eventMapper;
     private final LocationMapper locationMapper;
     private final StatsClient statsClient;
@@ -139,6 +140,10 @@ public class EventServiceImpl implements EventService {
 
         return eventRepository.findAllByInitiatorId(userId, page).stream()
                 .map(eventMapper::toEventShortDto)
+                .peek(eventShortDto -> {
+                    Long comments = commentRepository.countByEventId(eventShortDto.getId());
+                    eventShortDto.setComments(comments);
+                })
                 .collect(Collectors.toList());
     }
 
@@ -151,7 +156,9 @@ public class EventServiceImpl implements EventService {
 
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие с id = " + eventId + " не найдено!"));
-        return eventMapper.toEventFullDto(event);
+        EventFullDto eventFullDto = eventMapper.toEventFullDto(event);
+        eventFullDto.setComments(commentRepository.countByEventId(eventId));
+        return eventFullDto;
     }
 
     @Override
@@ -172,6 +179,10 @@ public class EventServiceImpl implements EventService {
 
         List<EventFullDto> eventFullDtos = eventRepository.findAdminEvents(params.getUsers(), params.getStates(), params.getCategories(), rangeStart, rangeEnd, page).stream()
                 .map(eventMapper::toEventFullDto)
+                .peek(eventFullDto -> {
+                    Long comments = commentRepository.countByEventId(eventFullDto.getId());
+                    eventFullDto.setComments(comments);
+                })
                 .collect(Collectors.toList());
 
         eventFullDtos.forEach(event -> event.setConfirmedRequests((long) requestRepository
@@ -192,6 +203,7 @@ public class EventServiceImpl implements EventService {
         }
         EventFullDto eventFullDto = eventMapper.toEventFullDto(event);
         eventFullDto.setConfirmedRequests((long) requestRepository.findByEventIdAndStatus(event.getId(), Status.CONFIRMED).size());
+        eventFullDto.setComments(commentRepository.countByEventId(eventId));
         statsClient.save(toEndpointHit(request));
 
         return getViews(Collections.singletonList(eventFullDto)).get(0);
@@ -241,6 +253,10 @@ public class EventServiceImpl implements EventService {
 
         List<EventShortDto> eventShortDtos = getViews(eventFullDtos).stream()
                 .map(eventMapper::toShortFromFullDto)
+                .peek(eventShortDto -> {
+                    Long comments = commentRepository.countByEventId(eventShortDto.getId());
+                    eventShortDto.setComments(comments);
+                })
                 .collect(Collectors.toList());
 
         if (params.getSort() != null && params.getSort().equals(Sort.VIEWS)) {
@@ -326,6 +342,8 @@ public class EventServiceImpl implements EventService {
         if (updateEvent.getRequestModeration() != null) {
             event.setRequestModeration(updateEvent.getRequestModeration());
         }
-        return eventMapper.toEventFullDto(event);
+        EventFullDto eventFullDto = eventMapper.toEventFullDto(event);
+        eventFullDto.setComments(commentRepository.countByEventId(event.getId()));
+        return eventFullDto;
     }
 }
