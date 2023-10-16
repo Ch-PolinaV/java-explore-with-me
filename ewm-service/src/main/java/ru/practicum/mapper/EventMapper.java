@@ -23,9 +23,11 @@ public interface EventMapper {
     @Mapping(target = "eventDate", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(target = "publishedOn", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(target = "views", expression = "java(0L)")
+    @Mapping(target = "comments", expression = "java(0L)")
     EventFullDto toEventFullDto(Event event);
 
     @Mapping(target = "eventDate", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "comments", expression = "java(0L)")
     EventShortDto toEventShortDto(Event event);
 
     EventShortDto toShortFromFullDto(EventFullDto eventFullDto);
